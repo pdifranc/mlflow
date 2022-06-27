@@ -280,6 +280,7 @@ module.exports = function ({ env }) {
         webpackConfig = i18nOverrides(webpackConfig);
         webpackConfig = configureIframeCSSPublicPaths(webpackConfig, env);
         webpackConfig = enableOptionalTypescript(webpackConfig);
+        webpackConfig.experiments = { topLevelAwait: true };
         console.log('Webpack config:', webpackConfig);
         return webpackConfig;
       },

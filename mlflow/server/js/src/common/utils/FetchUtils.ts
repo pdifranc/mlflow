@@ -4,6 +4,16 @@ import yaml from 'js-yaml';
 import _ from 'lodash';
 import { ErrorWrapper } from './ErrorWrapper';
 
+import { Amplify, Auth } from 'aws-amplify';
+
+Amplify.configure({
+  aws_project_region: process.env['REACT_APP_REGION'],
+  aws_cognito_identity_pool_id: process.env['REACT_APP_COGNITO_IDENTITY_POOL_ID'],
+  aws_cognito_region: process.env['REACT_APP_REGION'],
+  aws_user_pools_id: process.env['REACT_APP_COGNITO_USER_POOL_ID'],
+  aws_user_pools_web_client_id: process.env['REACT_APP_COGNITO_USER_POOL_CLIENT_ID'],
+});
+
 export const HTTPMethods = {
   GET: 'GET',
   POST: 'POST',
@@ -16,6 +26,26 @@ export const HTTPMethods = {
 // 429 (too many requests), 556 (RCP: workspace not served by shard)
 export const HTTPRetryStatuses = [429, 556];
 
+interface IHeader {
+  [index: string]: string;
+}
+
+interface IToken {
+  getJwtToken(): string;
+}
+
+interface ISession {
+  getIdToken(): IToken;
+}
+let session = {} as ISession;
+
+try {
+  session = await Auth.currentSession();
+} catch (error) {
+  console.error(error);
+  session = {} as ISession;
+}
+
 // To enable running behind applications that require specific headers
 // to be set during HTTP requests (e.g., CSRF tokens), we support parsing
 // a set of cookies with a key prefix of "$appName-request-header-$headerName",
@@ -23,14 +53,22 @@ export const HTTPRetryStatuses = [429, 556];
 export const getDefaultHeadersFromCookies = (cookieStr: any) => {
   const headerCookiePrefix = 'mlflow-request-header-';
   const parsedCookie = cookie.parse(cookieStr);
+  // eslint-disable-next-line prefer-const
+  let headers = {} as IHeader;
+
+  if (Object.keys(session).length > 0) {
+    headers['Authorization'] = `Bearer ${session.getIdToken().getJwtToken()}`;
+  }
+
   if (!parsedCookie || Object.keys(parsedCookie).length === 0) {
-    return {};
+    return headers;
   }
   return Object.keys(parsedCookie)
     .filter((cookieName) => cookieName.startsWith(headerCookiePrefix))
     .reduce(
       (acc, cookieName) => ({
         ...acc,
+        ...headers,
         [cookieName.substring(headerCookiePrefix.length)]: parsedCookie[cookieName],
       }),
       {},
@@ -82,6 +120,12 @@ export const yamlResponseParser = ({ resolve, response }: any) =>
 export const defaultError = ({ reject, response, err }: any) => {
   console.error('Fetch failed: ', response || err);
   if (response) {
+    if (response.status == 401) {
+      // Might happen that after the login, the session is not there yet. To ensure after the login the session
+      // and the user are set, we need to reload.
+      // TODO: find a better solution
+      window.location.reload();
+    }
     response.text().then((text: any) => reject(new ErrorWrapper(text, response.status)));
   } else if (err) {
     reject(new ErrorWrapper(err, 500));
