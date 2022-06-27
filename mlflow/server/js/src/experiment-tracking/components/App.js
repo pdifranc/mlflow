@@ -25,6 +25,19 @@ import { MetricPage } from './MetricPage';
 import { PageNotFoundView } from './PageNotFoundView';
 import { RunPage } from './RunPage';
 
+import { Amplify } from 'aws-amplify';
+
+import { withAuthenticator } from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
+
+Amplify.configure({
+  aws_project_region: process.env.REACT_APP_REGION,
+  aws_cognito_identity_pool_id: process.env.REACT_APP_COGNITO_IDENTITY_POOL_ID,
+  aws_cognito_region: process.env.REACT_APP_REGION,
+  aws_user_pools_id: process.env.REACT_APP_COGNITO_USER_POOL_ID,
+  aws_user_pools_web_client_id: process.env.REACT_APP_COGNITO_USER_POOL_CLIENT_ID,
+});
+
 const isExperimentsActive = (match, location) => {
   // eslint-disable-next-line prefer-const
   return match && !location.pathname.includes('models');
@@ -135,4 +148,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(App);
+export default withAuthenticator(connect(mapStateToProps)(App));

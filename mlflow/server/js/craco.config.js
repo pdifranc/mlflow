@@ -263,6 +263,7 @@ module.exports = function ({ env }) {
         webpackConfig = configureIframeCSSPublicPaths(webpackConfig, env);
         webpackConfig = enableOptionalTypescript(webpackConfig);
         webpackConfig = configureWebShared(webpackConfig);
+        webpackConfig.experiments = { topLevelAwait: true };
         console.log('Webpack config:', webpackConfig);
         return webpackConfig;
       },
