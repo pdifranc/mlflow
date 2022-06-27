@@ -4,6 +4,16 @@ import yaml from 'js-yaml';
 import _ from 'lodash';
 import { ErrorWrapper } from './ErrorWrapper';
 
+import { Amplify, Auth } from 'aws-amplify';
+
+Amplify.configure({
+  aws_project_region: process.env.REACT_APP_REGION,
+  aws_cognito_identity_pool_id: process.env.REACT_APP_COGNITO_IDENTITY_POOL_ID,
+  aws_cognito_region: process.env.REACT_APP_REGION,
+  aws_user_pools_id: process.env.REACT_APP_COGNITO_USER_POOL_ID,
+  aws_user_pools_web_client_id: process.env.REACT_APP_COGNITO_USER_POOL_CLIENT_ID,
+});
+
 export const HTTPMethods = {
   GET: 'GET',
   POST: 'POST',
@@ -12,6 +22,14 @@ export const HTTPMethods = {
   DELETE: 'DELETE',
 };
 
+let session = {};
+try {
+  session = await Auth.currentSession();
+} catch (error) {
+  console.error(error);
+  session = {};
+}
+
 // To enable running behind applications that require specific headers
 // to be set during HTTP requests (e.g., CSRF tokens), we support parsing
 // a set of cookies with a key prefix of "$appName-request-header-$headerName",
@@ -19,14 +37,22 @@ export const HTTPMethods = {
 export const getDefaultHeadersFromCookies = (cookieStr) => {
   const headerCookiePrefix = 'mlflow-request-header-';
   const parsedCookie = cookie.parse(cookieStr);
+  // eslint-disable-next-line prefer-const
+  let headers = {};
+
+  if (Object.keys(session).length > 0) {
+    headers['Authorization'] = `Bearer ${session.getIdToken().getJwtToken()}`;
+  }
+
   if (!parsedCookie || Object.keys(parsedCookie).length === 0) {
-    return {};
+    return headers;
   }
   return Object.keys(parsedCookie)
     .filter((cookieName) => cookieName.startsWith(headerCookiePrefix))
     .reduce(
       (acc, cookieName) => ({
         ...acc,
+        ...headers,
         [cookieName.substring(headerCookiePrefix.length)]: parsedCookie[cookieName],
       }),
       {},
@@ -100,6 +126,7 @@ export const fetchEndpointRaw = ({
 
   // if custom headers has duplicate fields with default Headers,
   // values in the custom headers options will always override.
+
   const headers = {
     'Content-Type': 'application/json; charset=utf-8',
     ...getDefaultHeaders(document.cookie),
