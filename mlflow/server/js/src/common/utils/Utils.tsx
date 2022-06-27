@@ -1178,12 +1178,12 @@ class Utils {
       // After enabling path routing, we don't need any hash splitting etc.
       return route;
     }
-    // if (Utils.isUsingExternalRouter()) {
-    //   // If using external routing, include the parent params and assume mlflow served at #
-    //   const parentHref = window.parent.location.href;
-    //   const parentHrefBeforeMlflowHash = parentHref.split('#')[0];
-    //   return `${parentHrefBeforeMlflowHash}#mlflow${route}`;
-    // }
+    if (Utils.isUsingExternalRouter()) {
+      // If using external routing, include the parent params and assume mlflow served at #
+      const parentHref = window.parent.location.href;
+      const parentHrefBeforeMlflowHash = parentHref.split('#')[0];
+      return `${parentHrefBeforeMlflowHash}#mlflow${route}`;
+    }
     return `./#${route}`; // issue-2213 use relative path in case there is a url prefix
   }
 
