@@ -66,6 +66,7 @@ Server & UI. It also adds project backends such as Docker and Kubernetes among
 other capabilities.
 """
 CORE_REQUIREMENTS = SKINNY_REQUIREMENTS + [
+    "requests-auth-aws-sigv4",
     "alembic",
     # Required
     "docker>=4.0.0",

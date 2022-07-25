@@ -16,6 +16,8 @@ from mlflow.utils.proto_json_utils import parse_dict
 from mlflow.utils.string_utils import strip_suffix
 from mlflow.exceptions import MlflowException, RestException
 
+from requests_auth_aws_sigv4 import AWSSigV4
+
 RESOURCE_DOES_NOT_EXIST = "RESOURCE_DOES_NOT_EXIST"
 _REST_API_PATH_PREFIX = "/api/2.0"
 # Response codes that generally indicate transient network failures and merit client retries,
@@ -90,7 +92,6 @@ def _get_http_response_with_retries(
     session = _get_request_session(max_retries, backoff_factor, retry_codes)
     return session.request(method, url, **kwargs)
 
-
 def http_request(
     host_creds,
     endpoint,
@@ -144,6 +145,9 @@ def http_request(
 
     if host_creds.client_cert_path is not None:
         kwargs["cert"] = host_creds.client_cert_path
+
+    if host_creds.aws_sigv4:
+        kwargs["auth"] = AWSSigV4('execute-api')
 
     cleaned_hostname = strip_suffix(hostname, "/")
     url = "%s%s" % (cleaned_hostname, endpoint)
@@ -336,6 +340,7 @@ class MlflowHostCreds:
         username=None,
         password=None,
         token=None,
+        aws_sigv4=None,
         ignore_tls_verification=False,
         client_cert_path=None,
         server_cert_path=None,
@@ -360,6 +365,7 @@ class MlflowHostCreds:
         self.username = username
         self.password = password
         self.token = token
+        self.aws_sigv4 = aws_sigv4
         self.ignore_tls_verification = ignore_tls_verification
         self.client_cert_path = client_cert_path
         self.server_cert_path = server_cert_path
