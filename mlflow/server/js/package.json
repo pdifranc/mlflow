@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^2.20.0",
-    "aws-amplify": "^4.3.24",
+    "aws-amplify": "^4.3.27",
     "@ag-grid-community/client-side-row-model": "^27.2.1",
     "@ag-grid-community/core": "^27.2.1",
     "@ag-grid-community/react": "^27.2.1",
