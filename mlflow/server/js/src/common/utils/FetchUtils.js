@@ -4,6 +4,12 @@ import yaml from 'js-yaml';
 import _ from 'lodash';
 import { ErrorWrapper } from './ErrorWrapper';
 
+import { Amplify, Auth } from 'aws-amplify';
+
+import awsExports from '../../aws-exports';
+
+Amplify.configure(awsExports);
+
 export const HTTPMethods = {
   GET: 'GET',
   POST: 'POST',
@@ -12,6 +18,14 @@ export const HTTPMethods = {
   DELETE: 'DELETE',
 };
 
+let session = {};
+try {
+  session = await Auth.currentSession();
+} catch (error) {
+  console.error(error);
+  session = {};
+}
+
 // To enable running behind applications that require specific headers
 // to be set during HTTP requests (e.g., CSRF tokens), we support parsing
 // a set of cookies with a key prefix of "$appName-request-header-$headerName",
@@ -19,14 +33,23 @@ export const HTTPMethods = {
 export const getDefaultHeaders = (cookieStr, appName = 'mlflow') => {
   const headerCookiePrefix = `${appName}-request-header-`;
   const parsedCookie = cookie.parse(cookieStr);
+  // eslint-disable-next-line prefer-const
+  let headers = {};
+
+  if (Object.keys(session).length > 0) {
+    // console.log(session.getIdToken().getJwtToken());
+    headers['Authorization'] = `Bearer ${session.getIdToken().getJwtToken()}`;
+  }
+
   if (!parsedCookie || Object.keys(parsedCookie).length === 0) {
-    return {};
+    return headers;
   }
   return Object.keys(parsedCookie)
     .filter((cookieName) => cookieName.startsWith(headerCookiePrefix))
     .reduce(
       (acc, cookieName) => ({
         ...acc,
+        ...headers,
         [cookieName.substring(headerCookiePrefix.length)]: parsedCookie[cookieName],
       }),
       {},
@@ -95,11 +118,13 @@ export const fetchEndpointRaw = ({
 
   // if custom headers has duplicate fields with default Headers,
   // values in the custom headers options will always override.
+
   const headers = {
     'Content-Type': 'application/json; charset=utf-8',
     ...getDefaultHeaders(document.cookie, appName),
     ...headerOptions,
   };
+
   const defaultOptions = {
     dataType: 'json',
   };

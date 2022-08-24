@@ -26,6 +26,15 @@ import { ModelListPage } from '../../model-registry/components/ModelListPage';
 import { ModelPage } from '../../model-registry/components/ModelPage';
 import { CompareModelVersionsPage } from '../../model-registry/components/CompareModelVersionsPage';
 
+import { Amplify } from 'aws-amplify';
+
+import { withAuthenticator } from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
+
+import awsExports from '../../aws-exports';
+
+Amplify.configure(awsExports);
+
 const isExperimentsActive = (match, location) => {
   // eslint-disable-next-line prefer-const
   let isActive = match && !location.pathname.includes('models');
@@ -132,4 +141,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(App);
+export default withAuthenticator(connect(mapStateToProps)(App));

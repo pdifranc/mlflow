@@ -169,6 +169,7 @@ module.exports = function({ env }) {
         webpackConfig.output.publicPath = 'static-files/';
         webpackConfig = i18nOverrides(webpackConfig);
         webpackConfig = configureWebShared(webpackConfig);
+        webpackConfig.experiments = { topLevelAwait: true };
         console.log('Webpack config:', webpackConfig);
         return webpackConfig;
       },
