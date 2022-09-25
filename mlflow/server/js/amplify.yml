@@ -19,5 +19,5 @@ applications:
           - '**/*'
       cache:
         paths:
-          - node_modules/**/*
+          - mlflow/server/js/node_modules/**/*
     appRoot: mlflow/server/js
