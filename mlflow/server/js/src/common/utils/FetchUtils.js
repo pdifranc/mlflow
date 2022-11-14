@@ -103,6 +103,12 @@ export const yamlResponseParser = ({ resolve, response }) =>
 export const defaultError = ({ reject, response, err }) => {
   console.error('Fetch failed: ', response || err);
   if (response) {
+    if (response.status == 401) {
+      // Might happen that after the login, the session is not there yet. To ensure after the login the session
+      // and the user are set, we need to reload.
+      // TODO: find a better solution
+      window.location.reload();
+    }
     response.text().then((text) => reject(new ErrorWrapper(text, response.status)));
   } else if (err) {
     reject(new ErrorWrapper(err, 500));
