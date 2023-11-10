@@ -41,6 +41,7 @@ class Provider(str, Enum):
     HUGGINGFACE_TEXT_GENERATION_INFERENCE = "huggingface-text-generation-inference"
     PALM = "palm"
     BEDROCK = "bedrock"
+    SAGEMAKER = "sagemaker"
     # Note: The following providers are only supported on Databricks
     DATABRICKS_MODEL_SERVING = "databricks-model-serving"
     DATABRICKS = "databricks"
@@ -209,6 +210,11 @@ class AWSBedrockConfig(ConfigModel):
     aws_config: Union[AWSRole, AWSIdAndKey, AWSBaseConfig]
 
 
+class AmazonSageMakerConfig(ConfigModel):
+    endpoint_name: str
+    # order here is important, at least for pydantic<2
+    aws_config: Union[AWSRole, AWSIdAndKey, AWSBaseConfig]
+
 config_types = {
     Provider.COHERE: CohereConfig,
     Provider.OPENAI: OpenAIConfig,
@@ -219,6 +225,7 @@ config_types = {
     Provider.MLFLOW_MODEL_SERVING: MlflowModelServingConfig,
     Provider.PALM: PaLMConfig,
     Provider.HUGGINGFACE_TEXT_GENERATION_INFERENCE: HuggingFaceTextGenerationInferenceConfig,
+    Provider.SAGEMAKER: AmazonSageMakerConfig,
 }
 
 
@@ -278,6 +285,7 @@ class Model(ConfigModel):
             MlflowModelServingConfig,
             HuggingFaceTextGenerationInferenceConfig,
             PaLMConfig,
+            AmazonSageMakerConfig
         ]
     ] = None
 
