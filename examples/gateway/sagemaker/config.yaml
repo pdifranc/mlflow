@@ -1,0 +1,10 @@
+routes:
+  - name: sagemaker
+    route_type: llm/v1/completions
+    model:
+      provider: sagemaker
+      name: llamav2-7b
+      config:
+        endpoint_name: <SAGEMAKER-ENDPOINT-NAME-DEPLOYED>
+        aws_config:
+          aws_region: eu-west-1
