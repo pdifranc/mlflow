@@ -193,7 +193,7 @@ def _pip_mlflow_install_step(dockerfile_context_dir, mlflow_home):
         return f"# Install MLflow\nRUN pip install mlflow=={VERSION}"
 
 
-def build_image_from_context(context_dir: str, image_name: str):
+def build_image_from_context(context_dir: str, image_name: str, network: str | None = None):
     import docker
 
     client = docker.from_env()
@@ -201,6 +201,7 @@ def build_image_from_context(context_dir: str, image_name: str):
     is_platform_supported = int(client.version()["Version"].split(".")[0]) >= 19
     # Enforcing the AMD64 architecture build for Apple M1 users
     platform_option = ["--platform", "linux/amd64"] if is_platform_supported else []
+    network_option = ["--network", network] if network else []
     commands = [
         "docker",
         "build",
@@ -209,6 +210,7 @@ def build_image_from_context(context_dir: str, image_name: str):
         "-f",
         "Dockerfile",
         *platform_option,
+        *network_option,
         ".",
     ]
     proc = Popen(commands, cwd=context_dir)

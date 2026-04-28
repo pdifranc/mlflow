@@ -27,7 +27,7 @@ def test_build_and_push_container(tmp_path, env_manager, install_java):
     dst_dir = tmp_path / "context"
 
     # Copy the context dir to a temp dir so we can verify the generated Dockerfile
-    def _build_image_with_copy(context_dir, image_name):
+    def _build_image_with_copy(context_dir, image_name, network=None):
         shutil.copytree(context_dir, dst_dir)
         for _ in range(3):
             try:
@@ -67,3 +67,25 @@ def test_build_and_push_container(tmp_path, env_manager, install_java):
 
     # Clean up generated image
     _docker_client.images.remove(_TEST_IMAGE_NAME, force=True)
+
+
+def test_build_and_push_container_network_option():
+    with mock.patch(
+        "mlflow.models.docker_utils.build_image_from_context"
+    ) as mock_build:
+        res = CliRunner().invoke(
+            build_and_push_container,
+            [
+                "--no-push",
+                "--mlflow-home",
+                ".",
+                "--network",
+                "sagemaker",
+                "--container",
+                _TEST_IMAGE_NAME,
+            ],
+            catch_exceptions=False,
+        )
+        assert res.exit_code == 0
+        mock_build.assert_called_once()
+        assert mock_build.call_args[1]["network"] == "sagemaker"
