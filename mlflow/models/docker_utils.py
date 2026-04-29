@@ -194,11 +194,22 @@ def _pip_mlflow_install_step(dockerfile_context_dir, mlflow_home):
 
 
 def build_image_from_context(context_dir: str, image_name: str, network: str | None = None):
-    import docker
+    import subprocess
 
-    client = docker.from_env()
+    try:
+        import docker
+
+        client = docker.from_env()
+        docker_version = int(client.version()["Version"].split(".")[0])
+    except Exception:
+        result = subprocess.run(
+            ["docker", "version", "--format", "{{.Server.Version}}"],
+            capture_output=True,
+            text=True,
+        )
+        docker_version = int(result.stdout.strip().split(".")[0]) if result.returncode == 0 else 19
     # In Docker < 19, `docker build` doesn't support the `--platform` option
-    is_platform_supported = int(client.version()["Version"].split(".")[0]) >= 19
+    is_platform_supported = docker_version >= 19
     # Enforcing the AMD64 architecture build for Apple M1 users
     platform_option = ["--platform", "linux/amd64"] if is_platform_supported else []
     network_option = ["--network", network] if network else []
