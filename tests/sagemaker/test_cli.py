@@ -89,3 +89,74 @@ def test_build_and_push_container_network_option():
         assert res.exit_code == 0
         mock_build.assert_called_once()
         assert mock_build.call_args[1]["network"] == "sagemaker"
+
+
+class TestBuildImageFromContext:
+    """Tests for build_image_from_context Docker version fallback and command construction."""
+
+    def test_fallback_to_cli_when_docker_sdk_fails(self):
+        """When the Python docker library fails, falls back to docker CLI for version detection."""
+        with (
+            mock.patch("mlflow.models.docker_utils.Popen") as mock_popen,
+            mock.patch("docker.from_env", side_effect=Exception("connection refused")),
+            mock.patch(
+                "subprocess.run",
+                return_value=mock.Mock(stdout="25.0.14\n", returncode=0),
+            ),
+        ):
+            mock_popen.return_value.wait.return_value = 0
+            build_image_from_context("/tmp/ctx", "test-image", network="sagemaker")
+
+            cmd = mock_popen.call_args[0][0]
+            assert "--platform" in cmd
+            assert "linux/amd64" in cmd
+            assert "--network" in cmd
+            assert "sagemaker" in cmd
+
+    def test_no_platform_flag_when_version_detection_fails(self):
+        """When both SDK and CLI fail, --platform is omitted (conservative default)."""
+        with (
+            mock.patch("mlflow.models.docker_utils.Popen") as mock_popen,
+            mock.patch("docker.from_env", side_effect=Exception("connection refused")),
+            mock.patch(
+                "subprocess.run",
+                side_effect=Exception("docker not found"),
+            ),
+        ):
+            mock_popen.return_value.wait.return_value = 0
+            build_image_from_context("/tmp/ctx", "test-image")
+
+            cmd = mock_popen.call_args[0][0]
+            assert "--platform" not in cmd
+
+    def test_no_platform_flag_when_cli_returns_malformed_output(self):
+        """When CLI returns malformed output, --platform is omitted."""
+        with (
+            mock.patch("mlflow.models.docker_utils.Popen") as mock_popen,
+            mock.patch("docker.from_env", side_effect=Exception("connection refused")),
+            mock.patch(
+                "subprocess.run",
+                return_value=mock.Mock(stdout="unknown\n", returncode=0),
+            ),
+        ):
+            mock_popen.return_value.wait.return_value = 0
+            build_image_from_context("/tmp/ctx", "test-image")
+
+            cmd = mock_popen.call_args[0][0]
+            assert "--platform" not in cmd
+
+    def test_no_network_flag_when_not_specified(self):
+        """When network is None, --network is not in the command."""
+        with (
+            mock.patch("mlflow.models.docker_utils.Popen") as mock_popen,
+            mock.patch("docker.from_env", side_effect=Exception("connection refused")),
+            mock.patch(
+                "subprocess.run",
+                return_value=mock.Mock(stdout="25.0.14\n", returncode=0),
+            ),
+        ):
+            mock_popen.return_value.wait.return_value = 0
+            build_image_from_context("/tmp/ctx", "test-image")
+
+            cmd = mock_popen.call_args[0][0]
+            assert "--network" not in cmd

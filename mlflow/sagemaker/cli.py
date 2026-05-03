@@ -348,7 +348,9 @@ def push_model_to_sagemaker(
 @cli_args.INSTALL_JAVA
 @cli_args.ENV_MANAGER
 @cli_args.MLFLOW_HOME
-def build_and_push_container(build, push, container, network, install_java, env_manager, mlflow_home):
+def build_and_push_container(
+    build, push, container, network, install_java, env_manager, mlflow_home
+):
     """
     Build new MLflow Sagemaker image, assign it a name, and push to ECR.
 
