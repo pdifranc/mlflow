@@ -1,5 +1,6 @@
 import logging
 import os
+import subprocess
 from subprocess import Popen
 from typing import Literal
 from urllib.parse import urlparse
@@ -194,8 +195,6 @@ def _pip_mlflow_install_step(dockerfile_context_dir, mlflow_home):
 
 
 def build_image_from_context(context_dir: str, image_name: str, network: str | None = None):
-    import subprocess
-
     try:
         import docker
 
